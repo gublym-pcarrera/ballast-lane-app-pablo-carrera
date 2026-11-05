@@ -6,13 +6,26 @@ namespace BallastLane.Infrastructure.Persistence;
 
 public static class DbSeeder
 {
-    public const string DemoEmail = "demo@ballast.local";
+    public const string DemoEmail = "demo@ballastlane.com";
     public const string DemoPassword = "Demo1234!";
     public const string DemoDisplayName = "Demo User";
     public static readonly Guid DemoUserId = Guid.Parse("8d0c7e3a-1b5a-4c1e-9f2a-6b0d1e4a7c21");
 
     public static void Seed(AppDbContext db, IPasswordHasher passwordHasher, TimeProvider clock)
     {
+        var existing = db.Users.SingleOrDefault(user => user.Id == DemoUserId);
+        if (existing is not null)
+        {
+            if (existing.Email != DemoEmail)
+            {
+                db.Entry(existing).Property(user => user.Email).CurrentValue = DemoEmail;
+                db.Entry(existing).Property(user => user.PasswordHash).CurrentValue = passwordHasher.Hash(DemoPassword);
+                db.SaveChanges();
+            }
+
+            return;
+        }
+
         if (db.Users.Any(user => user.Email == DemoEmail))
         {
             return;

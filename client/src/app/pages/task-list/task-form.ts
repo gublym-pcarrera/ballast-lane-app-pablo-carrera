@@ -1,5 +1,5 @@
 import { Component, effect, inject, input, output } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { TaskDraft, TaskStatus, todayIso } from '../../core/models';
 
 @Component({
@@ -9,6 +9,7 @@ import { TaskDraft, TaskStatus, todayIso } from '../../core/models';
 })
 export class TaskForm {
   readonly heading = input('New task');
+  readonly allowStatus = input(false);
   readonly initial = input<TaskDraft | null>(null);
   readonly saving = input(false);
   readonly serverErrors = input<Record<string, string[]> | null>(null);
@@ -19,7 +20,7 @@ export class TaskForm {
     title: ['', [Validators.required, Validators.maxLength(120)]],
     description: ['', [Validators.maxLength(2000)]],
     status: ['Todo' as TaskStatus, Validators.required],
-    dueDate: [todayIso(), Validators.required],
+    dueDate: [todayIso(), [Validators.required, notBeforeToday]],
   });
 
   constructor() {
@@ -28,7 +29,7 @@ export class TaskForm {
       this.form.reset({
         title: value?.title ?? '',
         description: value?.description ?? '',
-        status: value?.status ?? 'Todo',
+        status: this.allowStatus() ? (value?.status ?? 'Todo') : 'Todo',
         dueDate: value?.dueDate ?? todayIso(),
       });
     });
@@ -64,6 +65,10 @@ export class TaskForm {
       return 'This is too long.';
     }
 
+    if (control.hasError('past')) {
+      return 'Due date cannot be before today.';
+    }
+
     return null;
   }
 
@@ -77,7 +82,7 @@ export class TaskForm {
     this.save.emit({
       title: value.title,
       description: value.description,
-      status: value.status,
+      status: this.allowStatus() ? value.status : 'Todo',
       dueDate: value.dueDate,
     });
   }
@@ -85,4 +90,17 @@ export class TaskForm {
   protected close(): void {
     this.cancel.emit();
   }
+
+  protected earliestDueDate(): string {
+    return todayIso();
+  }
+}
+
+function notBeforeToday(control: AbstractControl): ValidationErrors | null {
+  const value = String(control.value ?? '');
+  if (value.length === 0 || value >= todayIso()) {
+    return null;
+  }
+
+  return { past: true };
 }

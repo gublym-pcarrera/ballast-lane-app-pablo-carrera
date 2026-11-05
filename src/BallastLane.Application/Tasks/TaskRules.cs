@@ -7,8 +7,16 @@ public static class TaskRules
     public const int TitleMaxLength = 120;
     public const int DescriptionMaxLength = 2000;
     public const string StatusMessage = "Status must be Todo, InProgress, or Done.";
+    public const string NewTaskStatusMessage = "New tasks start as Todo.";
+    public const string PastDueDateMessage = "Due date cannot be before today.";
 
-    public static Dictionary<string, string[]> Validate(string? title, string? description, string? status, DateOnly? dueDate)
+    public static Dictionary<string, string[]> Validate(
+        string? title,
+        string? description,
+        string? status,
+        DateOnly? dueDate,
+        DateOnly today,
+        bool newTask)
     {
         var errors = new Dictionary<string, string[]>();
         var trimmedTitle = title?.Trim() ?? string.Empty;
@@ -26,14 +34,22 @@ public static class TaskRules
             errors["description"] = [$"Description must be {DescriptionMaxLength} characters or fewer."];
         }
 
-        if (!TryParseStatus(status, out _))
+        if (!TryParseStatus(status, out var parsedStatus))
         {
             errors["status"] = [StatusMessage];
+        }
+        else if (newTask && parsedStatus != TaskState.Todo)
+        {
+            errors["status"] = [NewTaskStatusMessage];
         }
 
         if (dueDate is null)
         {
             errors["dueDate"] = ["Due date is required."];
+        }
+        else if (dueDate.Value < today)
+        {
+            errors["dueDate"] = [PastDueDateMessage];
         }
 
         return errors;

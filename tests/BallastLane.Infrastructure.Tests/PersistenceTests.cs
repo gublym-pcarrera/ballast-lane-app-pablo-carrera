@@ -76,6 +76,24 @@ public sealed class PersistenceTests
         Assert.All(database.Context.Tasks, task => Assert.Equal(user.Id, task.OwnerId));
     }
 
+    [Fact]
+    public void Seed_MovesAnExistingDemoUserOntoTheCurrentEmail()
+    {
+        using var database = new TestDatabase();
+        var hasher = new AspNetPasswordHasher();
+        var clock = new FixedClock(new DateTimeOffset(2026, 6, 15, 12, 0, 0, TimeSpan.Zero));
+        var now = new DateTime(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);
+        database.Context.Users.Add(User.Create(DbSeeder.DemoUserId, "demo@ballast.local", DbSeeder.DemoDisplayName, hasher.Hash("Oldpass1"), now));
+        database.Context.SaveChanges();
+
+        DbSeeder.Seed(database.Context, hasher, clock);
+
+        var user = Assert.Single(database.Context.Users);
+        Assert.Equal(DbSeeder.DemoEmail, user.Email);
+        Assert.True(hasher.Verify(DbSeeder.DemoPassword, user.PasswordHash));
+        Assert.Empty(database.Context.Tasks);
+    }
+
     private static async Task<Guid> AddUserAsync(TestDatabase database, string email)
     {
         var user = User.Create(Guid.NewGuid(), email, "User", "hash", DateTime.UnixEpoch);

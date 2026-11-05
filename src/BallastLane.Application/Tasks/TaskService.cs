@@ -48,7 +48,7 @@ public sealed class TaskService(ITaskRepository tasks, IUnitOfWork unitOfWork, T
 
     public async Task<TaskResponse> CreateAsync(Guid ownerId, UpsertTaskRequest request, CancellationToken cancellationToken)
     {
-        var errors = TaskRules.Validate(request.Title, request.Description, request.Status, request.DueDate);
+        var errors = TaskRules.Validate(request.Title, request.Description, request.Status, request.DueDate, Today(), newTask: true);
         if (errors.Count > 0)
         {
             throw new ValidationException(errors);
@@ -72,7 +72,7 @@ public sealed class TaskService(ITaskRepository tasks, IUnitOfWork unitOfWork, T
     public async Task<TaskResponse> UpdateAsync(Guid ownerId, Guid taskId, UpsertTaskRequest request, CancellationToken cancellationToken)
     {
         var task = await FindOwnedAsync(ownerId, taskId, cancellationToken);
-        var errors = TaskRules.Validate(request.Title, request.Description, request.Status, request.DueDate);
+        var errors = TaskRules.Validate(request.Title, request.Description, request.Status, request.DueDate, Today(), newTask: false);
         if (errors.Count > 0)
         {
             throw new ValidationException(errors);
@@ -93,6 +93,12 @@ public sealed class TaskService(ITaskRepository tasks, IUnitOfWork unitOfWork, T
         var task = await FindOwnedAsync(ownerId, taskId, cancellationToken);
         await tasks.DeleteAsync(task, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    private DateOnly Today()
+    {
+        var local = TimeZoneInfo.ConvertTime(clock.GetUtcNow(), TimeZoneInfo.Local);
+        return DateOnly.FromDateTime(local.DateTime);
     }
 
     private async Task<TaskItem> FindOwnedAsync(Guid ownerId, Guid taskId, CancellationToken cancellationToken)

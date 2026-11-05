@@ -39,7 +39,7 @@ export interface Registration extends Credentials {
 }
 
 export const demoAccount = {
-  email: 'demo@ballast.local',
+  email: 'demo@ballastlane.com',
   password: 'Demo1234!',
 };
 

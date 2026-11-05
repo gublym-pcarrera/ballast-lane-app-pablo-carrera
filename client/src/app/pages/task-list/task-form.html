@@ -17,20 +17,22 @@
   }
 
   <div class="split">
-    <div>
-      <label for="task-status">Status</label>
-      <select id="task-status" formControlName="status">
-        <option value="Todo">To do</option>
-        <option value="InProgress">In progress</option>
-        <option value="Done">Done</option>
-      </select>
-      @if (field('status'); as hint) {
-        <p class="field-error" role="alert">{{ hint }}</p>
-      }
-    </div>
+    @if (allowStatus()) {
+      <div>
+        <label for="task-status">Status</label>
+        <select id="task-status" formControlName="status">
+          <option value="Todo">To do</option>
+          <option value="InProgress">In progress</option>
+          <option value="Done">Done</option>
+        </select>
+        @if (field('status'); as hint) {
+          <p class="field-error" role="alert">{{ hint }}</p>
+        }
+      </div>
+    }
     <div>
       <label for="task-due">Due date</label>
-      <input id="task-due" type="date" formControlName="dueDate" [attr.aria-invalid]="field('dueDate') ? true : null" />
+      <input id="task-due" type="date" formControlName="dueDate" [min]="earliestDueDate()" [attr.aria-invalid]="field('dueDate') ? true : null" />
       @if (field('dueDate'); as hint) {
         <p class="field-error" role="alert">{{ hint }}</p>
       }

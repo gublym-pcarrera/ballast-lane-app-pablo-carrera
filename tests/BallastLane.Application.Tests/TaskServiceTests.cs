@@ -51,13 +51,42 @@ public sealed class TaskServiceTests
         Assert.True(exception.Errors.ContainsKey("dueDate"));
     }
 
+    [Theory]
+    [InlineData("InProgress")]
+    [InlineData("Done")]
+    public async Task Create_RejectsAnyStatusOtherThanTodo(string status)
+    {
+        var service = CreateService(new InMemoryTasks());
+
+        var exception = await Assert.ThrowsAsync<ValidationException>(() =>
+            service.CreateAsync(owner, new UpsertTaskRequest("Title", "", status, new DateOnly(2026, 6, 20)), CancellationToken.None));
+
+        Assert.Equal(TaskRules.NewTaskStatusMessage, Assert.Single(exception.Errors["status"]));
+    }
+
+    [Fact]
+    public async Task CreateAndUpdate_RejectADueDateBeforeToday()
+    {
+        var service = CreateService(new InMemoryTasks());
+        var created = await service.CreateAsync(owner, new UpsertTaskRequest("Today", "", "Todo", new DateOnly(2026, 6, 15)), CancellationToken.None);
+
+        var createException = await Assert.ThrowsAsync<ValidationException>(() =>
+            service.CreateAsync(owner, new UpsertTaskRequest("Yesterday", "", "Todo", new DateOnly(2026, 6, 14)), CancellationToken.None));
+        var updateException = await Assert.ThrowsAsync<ValidationException>(() =>
+            service.UpdateAsync(owner, created.Id, new UpsertTaskRequest("Today", "", "Done", new DateOnly(2026, 6, 14)), CancellationToken.None));
+
+        Assert.Equal(TaskRules.PastDueDateMessage, Assert.Single(createException.Errors["dueDate"]));
+        Assert.Equal(TaskRules.PastDueDateMessage, Assert.Single(updateException.Errors["dueDate"]));
+    }
+
     [Fact]
     public async Task List_ReturnsOnlyTheCallersTasksAndHonorsTheStatusFilter()
     {
         var store = new InMemoryTasks();
         var service = CreateService(store);
         await service.CreateAsync(owner, new UpsertTaskRequest("Later", "", "Todo", new DateOnly(2026, 6, 22)), CancellationToken.None);
-        await service.CreateAsync(owner, new UpsertTaskRequest("Now", "", "InProgress", new DateOnly(2026, 6, 16)), CancellationToken.None);
+        var activeTask = await service.CreateAsync(owner, new UpsertTaskRequest("Now", "", "Todo", new DateOnly(2026, 6, 16)), CancellationToken.None);
+        await service.UpdateAsync(owner, activeTask.Id, new UpsertTaskRequest("Now", "", "InProgress", new DateOnly(2026, 6, 16)), CancellationToken.None);
         await service.CreateAsync(other, new UpsertTaskRequest("Hidden", "", "Todo", new DateOnly(2026, 6, 16)), CancellationToken.None);
 
         var all = await service.ListAsync(owner, null, CancellationToken.None);
