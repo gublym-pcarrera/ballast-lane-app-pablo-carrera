@@ -33,6 +33,7 @@ export class TaskList {
   protected readonly saving = signal(false);
   protected readonly serverErrors = signal<Record<string, string[]> | null>(null);
   protected readonly pendingDeleteId = signal<string | null>(null);
+  protected readonly movingId = signal<string | null>(null);
   protected readonly draft = computed<TaskDraft | null>(() => {
     const task = this.editing();
     if (!task) {
@@ -127,6 +128,33 @@ export class TaskList {
         if (!problem.errors) {
           this.banner.set(problem.title ?? 'Could not save the task.');
         }
+      },
+    });
+  }
+
+  protected move(task: TaskItem, status: TaskStatus): void {
+    if (this.movingId()) {
+      return;
+    }
+
+    this.movingId.set(task.id);
+    this.banner.set(null);
+    this.tasksApi.update(task.id, {
+      title: task.title,
+      description: task.description,
+      status,
+      dueDate: task.dueDate,
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.movingId.set(null);
+        if (this.editing()?.id === task.id) {
+          this.closeEditor();
+        }
+        this.reload();
+      },
+      error: (error: unknown) => {
+        this.movingId.set(null);
+        this.banner.set(readProblem(error).title ?? 'Could not update the task.');
       },
     });
   }

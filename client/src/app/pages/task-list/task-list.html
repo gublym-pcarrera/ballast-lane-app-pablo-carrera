@@ -14,10 +14,17 @@
         <h1>Your tasks</h1>
         <p class="lede">Only you can see this list.</p>
       </div>
-      @if (!creating() && !editing()) {
-        <button type="button" class="primary" (click)="startCreate()">Add task</button>
-      }
     </div>
+
+    @if (!creating() && !editing()) {
+      <button type="button" class="composer" (click)="startCreate()">
+        <span>
+          <span class="composer-title">Add a new task</span>
+          <span class="composer-hint">Title and due date</span>
+        </span>
+        <span class="plus" aria-hidden="true">+</span>
+      </button>
+    }
 
     <div class="filters" role="group" aria-label="Filter tasks">
       @for (item of filters; track item.value) {
@@ -53,27 +60,56 @@
     } @else {
       <ul class="task-list">
         @for (task of tasks(); track task.id) {
-          <li class="task" [class.done]="task.status === 'Done'">
-            <div>
+          <li class="task" [class.done]="task.status === 'Done'" [class.in-progress]="task.status === 'InProgress'">
+            <div class="task-copy">
               <h2>{{ task.title }}</h2>
               @if (task.description) {
                 <p class="description">{{ task.description }}</p>
               }
               <p class="meta">
+                <span [class.overdue]="overdue(task)">{{ due(task.dueDate) }}</span>
                 <span class="status" [class.in-progress]="task.status === 'InProgress'" [class.done]="task.status === 'Done'">
                   {{ label(task.status) }}
                 </span>
-                <span [class.overdue]="overdue(task)">Due {{ due(task.dueDate) }}</span>
               </p>
             </div>
             <div class="task-actions">
               @if (pendingDeleteId() === task.id) {
-                <span>Delete this task?</span>
-                <button type="button" class="text danger" (click)="confirmDelete(task.id)">Delete</button>
-                <button type="button" class="text" (click)="cancelDelete()">Keep</button>
+                <span class="confirm">Delete?</span>
+                <button type="button" class="icon-btn danger" aria-label="Delete task" (click)="confirmDelete(task.id)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.2 17 19 7" /></svg>
+                </button>
+                <button type="button" class="icon-btn" aria-label="Keep task" (click)="cancelDelete()">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
+                </button>
               } @else {
-                <button type="button" class="text" (click)="startEdit(task)">Edit</button>
-                <button type="button" class="text" (click)="askDelete(task.id)">Delete</button>
+                <button type="button" class="icon-btn quiet" aria-label="Edit task" (click)="startEdit(task)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V20h3.5L18.8 8.7l-3.5-3.5L4 16.5zM16.8 3.7l3.5 3.5" /></svg>
+                </button>
+                <button type="button" class="icon-btn quiet" aria-label="Delete task" (click)="askDelete(task.id)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V5h6v2M8 7l1 13h6l1-13" /></svg>
+                </button>
+                @if (task.status === 'InProgress') {
+                  <button type="button" class="icon-btn quiet" aria-label="Move back to to do" [disabled]="movingId() === task.id" (click)="move(task, 'Todo')">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6 8 12l6 6" /></svg>
+                  </button>
+                }
+                @if (task.status === 'Todo') {
+                  <button type="button" class="icon-btn start" aria-label="Start task" [disabled]="movingId() === task.id" (click)="move(task, 'InProgress')">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7.5v9l8-4.5-8-4.5z" /></svg>
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="icon-btn check"
+                    [class.on]="task.status === 'Done'"
+                    [attr.aria-pressed]="task.status === 'Done'"
+                    [attr.aria-label]="task.status === 'Done' ? 'Move back to in progress' : 'Mark done'"
+                    [disabled]="movingId() === task.id"
+                    (click)="move(task, task.status === 'Done' ? 'InProgress' : 'Done')">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5 10 16l7.5-8" /></svg>
+                  </button>
+                }
               }
             </div>
           </li>
