@@ -80,6 +80,31 @@ public sealed class TaskServiceTests
     }
 
     [Fact]
+    public async Task Update_AllowsAStatusChangeWhenTheDueDateIsAlreadyPast()
+    {
+        var store = new InMemoryTasks();
+        var overdue = TaskItem.Create(
+            Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+            owner,
+            "Overdue",
+            "Already scheduled",
+            TaskState.Todo,
+            new DateOnly(2026, 6, 14),
+            Now.UtcDateTime);
+        store.Items.Add(overdue);
+        var service = CreateService(store);
+
+        var updated = await service.UpdateAsync(
+            owner,
+            overdue.Id,
+            new UpsertTaskRequest("Overdue", "Already scheduled", "InProgress", overdue.DueDate),
+            CancellationToken.None);
+
+        Assert.Equal("InProgress", updated.Status);
+        Assert.Equal(new DateOnly(2026, 6, 14), updated.DueDate);
+    }
+
+    [Fact]
     public async Task List_ReturnsOnlyTheCallersTasksAndHonorsTheStatusFilter()
     {
         var store = new InMemoryTasks();
