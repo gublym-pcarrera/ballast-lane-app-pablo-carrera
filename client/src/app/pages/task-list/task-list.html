@@ -1,0 +1,83 @@
+<div class="shell">
+  <a class="skip" href="#tasks">Skip to tasks</a>
+  <header class="topbar">
+    <p class="brand"><span class="mark" aria-hidden="true">T</span> Tasks</p>
+    <div class="topbar-actions">
+      <span class="who">{{ user()?.displayName }}</span>
+      <button type="button" class="text" (click)="signOut()">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page" id="tasks">
+    <div class="page-head">
+      <div>
+        <h1>Your tasks</h1>
+        <p class="lede">Only you can see this list.</p>
+      </div>
+      @if (!creating() && !editing()) {
+        <button type="button" class="primary" (click)="startCreate()">Add task</button>
+      }
+    </div>
+
+    <div class="filters" role="group" aria-label="Filter tasks">
+      @for (item of filters; track item.value) {
+        <button type="button" [attr.aria-pressed]="filter() === item.value" (click)="setFilter(item.value)">
+          {{ item.label }}
+        </button>
+      }
+    </div>
+
+    @if (creating() || editing()) {
+      <app-task-form
+        [heading]="editing() ? 'Edit task' : 'New task'"
+        [initial]="draft()"
+        [saving]="saving()"
+        [serverErrors]="serverErrors()"
+        (save)="save($event)"
+        (cancel)="closeEditor()"
+      />
+    }
+
+    @if (banner(); as message) {
+      <p class="banner" role="alert">{{ message }}</p>
+    }
+
+    @if (loading() && tasks().length === 0) {
+      <p class="muted">Loading tasks…</p>
+    } @else if (tasks().length === 0) {
+      <section class="empty">
+        <h2>{{ filter() === 'all' ? 'Nothing here yet' : 'Nothing in this view' }}</h2>
+        <p>{{ filter() === 'all' ? 'Add a task when you are ready.' : 'Try another filter, or add a task in this status.' }}</p>
+      </section>
+    } @else {
+      <ul class="task-list">
+        @for (task of tasks(); track task.id) {
+          <li class="task" [class.done]="task.status === 'Done'">
+            <div>
+              <h2>{{ task.title }}</h2>
+              @if (task.description) {
+                <p class="description">{{ task.description }}</p>
+              }
+              <p class="meta">
+                <span class="status" [class.in-progress]="task.status === 'InProgress'" [class.done]="task.status === 'Done'">
+                  {{ label(task.status) }}
+                </span>
+                <span [class.overdue]="overdue(task)">Due {{ due(task.dueDate) }}</span>
+              </p>
+            </div>
+            <div class="task-actions">
+              @if (pendingDeleteId() === task.id) {
+                <span>Delete this task?</span>
+                <button type="button" class="text danger" (click)="confirmDelete(task.id)">Delete</button>
+                <button type="button" class="text" (click)="cancelDelete()">Keep</button>
+              } @else {
+                <button type="button" class="text" (click)="startEdit(task)">Edit</button>
+                <button type="button" class="text" (click)="askDelete(task.id)">Delete</button>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </main>
+</div>

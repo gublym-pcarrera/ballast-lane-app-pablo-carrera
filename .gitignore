@@ -1,0 +1,15 @@
+bin/
+obj/
+.vs/
+TestResults/
+*.user
+*.suo
+*.db
+*.db-shm
+*.db-wal
+
+src/BallastLane.Api/data/
+
+client/node_modules/
+client/dist/
+client/.angular/

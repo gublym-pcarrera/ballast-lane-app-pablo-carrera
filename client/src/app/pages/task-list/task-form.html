@@ -1,0 +1,43 @@
+<form class="editor" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="editor-head">
+    <h2>{{ heading() }}</h2>
+    <button type="button" class="text" (click)="close()">Cancel</button>
+  </div>
+
+  <label for="task-title">Title</label>
+  <input id="task-title" type="text" formControlName="title" maxlength="120" autocomplete="off" [attr.aria-invalid]="field('title') ? true : null" />
+  @if (field('title'); as hint) {
+    <p class="field-error" role="alert">{{ hint }}</p>
+  }
+
+  <label for="task-description">Description</label>
+  <textarea id="task-description" formControlName="description" rows="3" maxlength="2000" [attr.aria-invalid]="field('description') ? true : null"></textarea>
+  @if (field('description'); as hint) {
+    <p class="field-error" role="alert">{{ hint }}</p>
+  }
+
+  <div class="split">
+    <div>
+      <label for="task-status">Status</label>
+      <select id="task-status" formControlName="status">
+        <option value="Todo">To do</option>
+        <option value="InProgress">In progress</option>
+        <option value="Done">Done</option>
+      </select>
+      @if (field('status'); as hint) {
+        <p class="field-error" role="alert">{{ hint }}</p>
+      }
+    </div>
+    <div>
+      <label for="task-due">Due date</label>
+      <input id="task-due" type="date" formControlName="dueDate" [attr.aria-invalid]="field('dueDate') ? true : null" />
+      @if (field('dueDate'); as hint) {
+        <p class="field-error" role="alert">{{ hint }}</p>
+      }
+    </div>
+  </div>
+
+  <button class="primary" type="submit" [disabled]="saving()">
+    {{ saving() ? 'Saving…' : 'Save task' }}
+  </button>
+</form>
