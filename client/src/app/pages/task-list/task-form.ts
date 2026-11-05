@@ -20,7 +20,7 @@ export class TaskForm {
     title: ['', [Validators.required, Validators.maxLength(120)]],
     description: ['', [Validators.maxLength(2000)]],
     status: ['Todo' as TaskStatus, Validators.required],
-    dueDate: [todayIso(), [Validators.required, notBeforeToday]],
+    dueDate: [todayIso(), [Validators.required, notBeforeToday(() => this.initial()?.dueDate ?? null)]],
   });
 
   constructor() {
@@ -96,11 +96,13 @@ export class TaskForm {
   }
 }
 
-function notBeforeToday(control: AbstractControl): ValidationErrors | null {
-  const value = String(control.value ?? '');
-  if (value.length === 0 || value >= todayIso()) {
-    return null;
-  }
+function notBeforeToday(currentDueDate: () => string | null) {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = String(control.value ?? '');
+    if (value.length === 0 || value >= todayIso() || value === currentDueDate()) {
+      return null;
+    }
 
-  return { past: true };
+    return { past: true };
+  };
 }

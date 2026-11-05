@@ -67,7 +67,7 @@ client                            Angular 22 UI
 
 Domain and application code do not reference EF Core or ASP.NET. Controllers depend on application services and pass the signed-in user id in. They do not touch the database. `tests/BallastLane.Architecture.Tests` fails the build if those references appear.
 
-Business rules live in `AccountRules` and `TaskRules`: required fields, lengths, the status values `Todo`, `InProgress`, and `Done`, email shape, and a password that is 8–128 characters with a letter and a number. A new task is always `Todo`; status can change when the task is edited. A due date must be today or later. A user who asks for someone else's task gets **404**, so the API does not reveal that the row exists. Login failures use one message for an unknown email and a wrong password. Passwords are stored with the ASP.NET password hasher and are not returned by the API.
+Business rules live in `AccountRules` and `TaskRules`: required fields, lengths, the status values `Todo`, `InProgress`, and `Done`, email shape, and a password that is 8–128 characters with a letter and a number. A new task is always `Todo`; status can change when the task is edited. A new or changed due date must be today or later. A task that is already overdue keeps that date when only its status changes. A user who asks for someone else's task gets **404**, so the API does not reveal that the row exists. Login failures use one message for an unknown email and a wrong password. Passwords are stored with the ASP.NET password hasher and are not returned by the API.
 
 | Method | Path | Auth |
 | --- | --- | --- |

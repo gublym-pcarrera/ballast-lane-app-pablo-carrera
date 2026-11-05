@@ -72,7 +72,7 @@ public sealed class TaskService(ITaskRepository tasks, IUnitOfWork unitOfWork, T
     public async Task<TaskResponse> UpdateAsync(Guid ownerId, Guid taskId, UpsertTaskRequest request, CancellationToken cancellationToken)
     {
         var task = await FindOwnedAsync(ownerId, taskId, cancellationToken);
-        var errors = TaskRules.Validate(request.Title, request.Description, request.Status, request.DueDate, Today(), newTask: false);
+        var errors = TaskRules.Validate(request.Title, request.Description, request.Status, request.DueDate, Today(), newTask: false, task.DueDate);
         if (errors.Count > 0)
         {
             throw new ValidationException(errors);

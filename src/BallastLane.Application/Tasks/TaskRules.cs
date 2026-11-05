@@ -16,7 +16,8 @@ public static class TaskRules
         string? status,
         DateOnly? dueDate,
         DateOnly today,
-        bool newTask)
+        bool newTask,
+        DateOnly? currentDueDate = null)
     {
         var errors = new Dictionary<string, string[]>();
         var trimmedTitle = title?.Trim() ?? string.Empty;
@@ -47,7 +48,7 @@ public static class TaskRules
         {
             errors["dueDate"] = ["Due date is required."];
         }
-        else if (dueDate.Value < today)
+        else if (dueDate.Value < today && dueDate.Value != currentDueDate)
         {
             errors["dueDate"] = [PastDueDateMessage];
         }
